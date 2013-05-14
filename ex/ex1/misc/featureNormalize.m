@@ -26,13 +26,15 @@ sigma = zeros(1, size(X, 2));
 % Hint: You might find the 'mean' and 'std' functions useful.
 %       
 
+mu = mean(X);
+sigma = std(X);
+m = length(X); % # of train examples
 
+t = ones(m,1);
+mu_t = t * mu; % transform to m x 2 matrix
+sigma_t = t * sigma; % 
 
-
-
-
-
-
+X_norm = (X .- mu_t) ./ sigma_t;
 
 % ============================================================
 
