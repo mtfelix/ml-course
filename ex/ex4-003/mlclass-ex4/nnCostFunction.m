@@ -21,9 +21,11 @@ Theta1 = reshape(nn_params(1:hidden_layer_size * (input_layer_size + 1)), ...
 
 Theta2 = reshape(nn_params((1 + (hidden_layer_size * (input_layer_size + 1))):end), ...
                  num_labels, (hidden_layer_size + 1));
+				 
 
 % Setup some useful variables
 m = size(X, 1);
+
          
 % You need to return the following variables correctly 
 J = 0;
@@ -49,11 +51,11 @@ h = sigmoid([ones(m, 1) a2] * Theta2');
 
 %% extends y from (5000 x 1) to (5000 x 10)
 % 1. simple way
- y3=(y==[1:num_labels]);
+%y3=(y==[1:num_labels]);
 % 2. stepping way
-%y1 = ones(5000,1)*(1:num_labels);
-%y2 = y * ones(1,num_labels);
-%y3 = (y1 == y2);
+y1 = ones(m,1)*(1:num_labels);
+y2 = y * ones(1,num_labels);
+y3 = (y1 == y2);
 
 % the calculation of J is same to lrCostFunction in ex3 without regularization
 %% Since the h and y are matrix not just vector, we need to sum two times, once for col once for row
@@ -90,9 +92,9 @@ J = J + regularization;
 %
 m = size(X, 1);
 XX = [ones(m, 1) X];
-
+Delta1 = zeros(size(Theta1));
+Delta2 = zeros(size(Theta2));
 for t =  1:m
-
     %%% step 1
 	
     % a1 is 1x401
@@ -104,7 +106,7 @@ for t =  1:m
 	
 	% a2 is 1 x 26 (add a0, the bias)
 	a2 = sigmoid(z2);
-	a2 = [ones(size(a2,1),1) a2];
+	a2 = [1 a2];
 	
 	% Theta2 is 10 x 26
 	% a3 is 1 x 10, a3 is the h
@@ -113,13 +115,38 @@ for t =  1:m
 	
 	%%% step 2
 	
-	% y3 is 5000 x 10, y3(t) stands for the y-vector of t-th sample. 
-	delta3  = ( a3 .- y3(t) );
+	% y3 is 5000 x 10, y3(t) stands for the y-vector of t-th sample.
+    % a3 is 1 x 10, delta3 is 1 x 10 	
+	delta3  = ( a3 .- y3(t,:) );
 	
+	%%% step 3
+	%%  Theta2 is 10 x 26, delta3 is 1 x 10, 
+	%% thus delta2 is 26 x 1, sigmoidGradient(z2) is 1 x 25,
+	%% so, delta2 need transpose and delete the first bias item
+	delta2 = delta3 * Theta2;
+	delta2 = delta2(:,2:end);
+	delta2 = delta2 .* sigmoidGradient(z2);
+	
+	%%% step 4
+	% Delta1 should have the same dimension with Theta1 (25 x 401),
+	% and a1 is 1x401, delta2 is 1 x 25
+	% 
+	Delta1 = Delta1 + delta2' * a1;
+	% Delta2 should have the same dimension with Theta2 (10 x 26),
+	% and a2 is 1 x 26, delta3 is 1 x 10
+	Delta2 = Delta2 + delta3' * a2;
 endfor
 
+Theta1_grad = Delta1 ./ m;
+Theta2_grad = Delta2 ./ m;
 
+% unroll the parameters
+%grad = [Theta1_grad(:) ; Theta2_grad(:)];
 
+%fprintf('size of Theta1_grad is %d %d\n', size(Theta1_grad));
+%fprintf('size of Theta2_grad is %d %d\n', size(Theta2_grad));
+%fprintf('size of grad is %d %d\n', size(grad));
+%fprintf('size of nn_params is %d %d\n', size(nn_params));
 
 
 
@@ -131,23 +158,10 @@ endfor
 %               and Theta2_grad from Part 2.
 %
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+Theta1_grad = Theta1_grad .+ (lambda/m) .* Theta1;
+Theta1_grad(:,1) = Theta1_grad(:,1) - lambda/m .* Theta1(:,1);
+Theta2_grad = Theta2_grad .+ (lambda/m) .* Theta2;
+Theta2_grad(:,1) = Theta2_grad(:,1) - lambda/m .* Theta2(:,1);
 
 % -------------------------------------------------------------
 
